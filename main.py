@@ -1,258 +1,799 @@
 import streamlit as st
 
-# -----------------------------------------------------------------------------
-# 1. 페이지 설정 및 CSS 스타일링 (화려하고 예쁜 디자인)
-# -----------------------------------------------------------------------------
+# 페이지 설정
 st.set_page_config(
-    page_title="꿈을 찾는 MBTI 진로 나침반",
-    page_icon="🧭",
+    page_title="✨ MBTI 진로 탐색기 ✨",
+    page_icon="🌟",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS 주입
+# CSS 스타일링
 st.markdown("""
-    <style>
-    /* 전체 폰트 및 배경 설정 */
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Noto Sans KR', sans-serif;
+    * {
+        font-family: 'Noto Sans KR', 'Gowun Dodum', sans-serif;
     }
-
-    /* 메인 타이틀 그라데이션 효과 */
+    
+    .stApp {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        min-height: 100vh;
+    }
+    
     .main-title {
-        font-size: 3rem;
-        font-weight: 800;
-        background: -webkit-linear-gradient(45deg, #FF512F, #DD2476, #4A00E0);
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: 900;
+        background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff);
+        background-size: 300% 300%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-    }
-
-    /* 서브 타이틀 스타일 */
-    .sub-header {
-        color: #4A00E0;
-        font-weight: 700;
-        border-bottom: 2px solid #DD2476;
-        padding-bottom: 5px;
-        margin-top: 20px;
-        margin-bottom: 15px;
-    }
-
-    /* 카드 스타일 (Box Design) */
-    .info-card {
-        background-color: #ffffff;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        border-left: 5px solid #DD2476;
-        transition: transform 0.3s ease;
-    }
-    .info-card:hover {
-        transform: translateY(-5px);
-    }
-
-    /* 직업 추천 태그 스타일 */
-    .job-tag {
-        display: inline-block;
-        background: linear-gradient(90deg, #8E2DE2, #4A00E0);
-        color: white;
-        padding: 8px 15px;
-        border-radius: 20px;
-        margin: 5px;
-        font-size: 0.9rem;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    /* 사이드바 스타일 조정 */
-    section[data-testid="stSidebar"] {
-        background-color: #f0f2f6;
+        animation: gradient-shift 5s ease infinite;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 0 30px rgba(255,255,255,0.3);
     }
     
-    /* 이모지 크기 키우기 */
-    .emoji-large {
-        font-size: 1.5rem;
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
-    </style>
+    
+    .subtitle {
+        text-align: center;
+        font-size: 1.3rem;
+        color: #a0a0a0;
+        margin-bottom: 2rem;
+        letter-spacing: 2px;
+    }
+    
+    .mbti-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .mbti-btn {
+        background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 25px 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        backdrop-filter: blur(10px);
+    }
+    
+    .mbti-btn:hover {
+        transform: translateY(-10px) scale(1.05);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.3);
+    }
+    
+    .mbti-type {
+        font-size: 1.8rem;
+        font-weight: 900;
+        margin-bottom: 5px;
+    }
+    
+    .mbti-emoji {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .mbti-name {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    
+    /* MBTI 타입별 색상 */
+    .analyst { color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
+    .analyst:hover { box-shadow: 0 20px 40px rgba(168, 85, 247, 0.3); }
+    
+    .diplomat { color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+    .diplomat:hover { box-shadow: 0 20px 40px rgba(34, 197, 94, 0.3); }
+    
+    .sentinel { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+    .sentinel:hover { box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3); }
+    
+    .explorer { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+    .explorer:hover { box-shadow: 0 20px 40px rgba(245, 158, 11, 0.3); }
+    
+    .result-card {
+        background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+        border-radius: 30px;
+        padding: 40px;
+        margin: 20px auto;
+        max-width: 900px;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    }
+    
+    .result-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .result-emoji {
+        font-size: 5rem;
+        margin-bottom: 15px;
+        animation: bounce 2s ease-in-out infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+    }
+    
+    .result-type {
+        font-size: 3rem;
+        font-weight: 900;
+        margin-bottom: 10px;
+    }
+    
+    .result-nickname {
+        font-size: 1.5rem;
+        color: #feca57;
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 30px 0 15px 0;
+        padding-left: 15px;
+        border-left: 4px solid;
+        color: white;
+    }
+    
+    .trait-box {
+        background: rgba(255,255,255,0.05);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+    }
+    
+    .trait-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        color: #e0e0e0;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    
+    .career-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .career-item {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03));
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .career-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+    
+    .career-emoji {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .career-name {
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .compatibility-section {
+        margin-top: 30px;
+        padding: 25px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 20px;
+    }
+    
+    .compat-row {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 15px;
+    }
+    
+    .compat-item {
+        text-align: center;
+        padding: 15px 25px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 15px;
+    }
+    
+    .good-match { border: 2px solid rgba(34, 197, 94, 0.5); }
+    .challenge-match { border: 2px solid rgba(239, 68, 68, 0.5); }
+    
+    .footer {
+        text-align: center;
+        margin-top: 50px;
+        padding: 30px;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .sparkle {
+        position: fixed;
+        pointer-events: none;
+        animation: sparkle-fade 1s ease-out forwards;
+    }
+    
+    @keyframes sparkle-fade {
+        0% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(0); }
+    }
+    
+    /* Streamlit 기본 스타일 오버라이드 */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+    }
+    
+    .stSelectbox > div > div {
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 15px;
+        color: white;
+    }
+    
+    div[data-testid="stMarkdownContainer"] p {
+        color: #e0e0e0;
+    }
+    
+    .block-container {
+        padding-top: 2rem;
+    }
+</style>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# 2. MBTI 데이터베이스 (특성 및 추천 직업)
-# -----------------------------------------------------------------------------
+# MBTI 데이터
 mbti_data = {
-    # 분석가형
     "INTJ": {
-        "name": "용의주도한 전략가 (Architect)",
         "emoji": "🧠",
-        "keywords": ["#비전", "#독립적", "#논리적", "#계획적"],
-        "desc": "상상력이 풍부하며 철두철미한 계획을 세우는 전략가형입니다. 지적 호기심이 많고 복잡한 문제를 해결하는 것을 즐깁니다.",
-        "jobs": ["투자 은행가", "소프트웨어 개발자", "변호사", "과학자", "경영 컨설턴트", "데이터 분석가"]
+        "nickname": "전략가 (The Architect)",
+        "group": "analyst",
+        "color": "#a855f7",
+        "description": "독립적이고 전략적인 사고를 하는 INTJ는 세상을 체스판처럼 바라봅니다. 항상 큰 그림을 보며, 복잡한 문제를 해결하는 데 탁월한 능력을 발휘합니다.",
+        "traits": [
+            "🎯 목표 지향적이며 장기적 비전을 가짐",
+            "🔬 분석적이고 논리적인 사고력",
+            "📚 지식에 대한 강한 열망",
+            "🏔️ 높은 기준과 완벽주의 성향",
+            "🤔 독립적이며 혼자 일하는 것을 선호"
+        ],
+        "careers": [
+            ("👨‍🔬", "과학자"),
+            ("💻", "소프트웨어 개발자"),
+            ("📊", "전략 컨설턴트"),
+            ("⚖️", "변호사"),
+            ("🏛️", "건축가"),
+            ("📈", "투자 분석가")
+        ],
+        "good_match": ["ENFP", "ENTP"],
+        "challenge_match": ["ESFP", "ISFP"]
     },
     "INTP": {
-        "name": "논리적인 사색가 (Logician)",
-        "emoji": "🧪",
-        "keywords": ["#호기심", "#분석", "#아이디어", "#탐구"],
-        "desc": "끊임없이 새로운 지식에 목말라하는 혁신가형입니다. 추상적인 개념을 다루는 것을 좋아하며 독창적입니다.",
-        "jobs": ["컴퓨터 프로그래머", "수학자", "대학교수", "연구원", "철학자", "시스템 엔지니어"]
+        "emoji": "🔬",
+        "nickname": "논리술사 (The Logician)",
+        "group": "analyst",
+        "color": "#a855f7",
+        "description": "끝없는 호기심을 가진 INTP는 이론과 아이디어의 세계에서 살아갑니다. 복잡한 문제를 분석하고 혁신적인 해결책을 찾는 것을 즐깁니다.",
+        "traits": [
+            "💡 창의적이고 혁신적인 사고",
+            "🧩 복잡한 문제 해결 능력",
+            "📖 이론적이고 추상적인 개념에 관심",
+            "🎨 독창적인 아이디어 생성",
+            "🔍 끊임없는 분석과 탐구"
+        ],
+        "careers": [
+            ("🔬", "연구원"),
+            ("💻", "프로그래머"),
+            ("🧮", "수학자"),
+            ("🎮", "게임 개발자"),
+            ("📐", "시스템 분석가"),
+            ("🤖", "AI 엔지니어")
+        ],
+        "good_match": ["ENTJ", "ENFJ"],
+        "challenge_match": ["ESFJ", "ISFJ"]
     },
     "ENTJ": {
-        "name": "대담한 통솔자 (Commander)",
-        "emoji": "🦁",
-        "keywords": ["#리더십", "#결단력", "#목표지향", "#효율성"],
-        "desc": "대담하고 상상력이 풍부하며 강한 의지의 지도자형입니다. 장기적인 계획을 수립하고 목표를 달성하는 데 능숙합니다.",
-        "jobs": ["기업 임원(CEO)", "변호사", "경영 컨설턴트", "정치인", "프로젝트 매니저", "창업가"]
+        "emoji": "👑",
+        "nickname": "통솔자 (The Commander)",
+        "group": "analyst",
+        "color": "#a855f7",
+        "description": "타고난 리더인 ENTJ는 카리스마와 자신감으로 사람들을 이끕니다. 효율성을 추구하며, 목표 달성을 위해 체계적으로 계획하고 실행합니다.",
+        "traits": [
+            "👔 강력한 리더십과 추진력",
+            "📋 체계적이고 조직적인 성향",
+            "🎤 설득력 있는 의사소통 능력",
+            "⚡ 결단력과 빠른 의사결정",
+            "🏆 성취 지향적이며 야망이 큼"
+        ],
+        "careers": [
+            ("👔", "CEO/경영자"),
+            ("📊", "경영 컨설턴트"),
+            ("⚖️", "판사/검사"),
+            ("🏛️", "정치인"),
+            ("💼", "사업가"),
+            ("🎬", "영화 감독")
+        ],
+        "good_match": ["INTP", "INFP"],
+        "challenge_match": ["ISFP", "INFP"]
     },
     "ENTP": {
-        "name": "뜨거운 논쟁을 즐기는 변론가 (Debater)",
-        "emoji": "🔥",
-        "keywords": ["#창의적", "#도전", "#언변", "#다재다능"],
-        "desc": "지적인 도전을 두려워하지 않는 똑똑한 호기심형입니다. 기존의 틀을 깨고 새로운 가능성을 발견하는 것을 즐깁니다.",
-        "jobs": ["발명가", "벤처 투자자", "저널리스트", "마케팅 디렉터", "정치 평론가", "크리에이티브 디렉터"]
+        "emoji": "💡",
+        "nickname": "변론가 (The Debater)",
+        "group": "analyst",
+        "color": "#a855f7",
+        "description": "기발한 아이디어와 날카로운 재치를 가진 ENTP는 토론을 즐기고 관습에 도전합니다. 새로운 가능성을 탐구하며 창의적인 해결책을 찾습니다.",
+        "traits": [
+            "🗣️ 뛰어난 토론 및 설득 능력",
+            "🌟 창의적이고 혁신적인 사고",
+            "🎢 새로운 도전을 즐김",
+            "🧠 빠른 두뇌 회전과 재치",
+            "🔄 유연하고 적응력이 뛰어남"
+        ],
+        "careers": [
+            ("💼", "기업가"),
+            ("📰", "저널리스트"),
+            ("🎤", "방송인"),
+            ("⚖️", "변호사"),
+            ("🎨", "광고 기획자"),
+            ("🚀", "스타트업 창업자")
+        ],
+        "good_match": ["INFJ", "INTJ"],
+        "challenge_match": ["ISFJ", "ISTJ"]
     },
-    # 외교관형
     "INFJ": {
-        "name": "선의의 옹호자 (Advocate)",
-        "emoji": "🧙‍♂️",
-        "keywords": ["#통찰력", "#이타주의", "#신념", "#창의성"],
-        "desc": "조용하고 신비로우며 샘솟는 영감으로 타인에게 영향을 줍니다. 깊은 통찰력으로 사람들의 성장을 돕는 것을 좋아합니다.",
-        "jobs": ["심리 상담가", "작가", "사회복지사", "인사 담당자(HR)", "예술가", "특수교사"]
+        "emoji": "🔮",
+        "nickname": "옹호자 (The Advocate)",
+        "group": "diplomat",
+        "color": "#22c55e",
+        "description": "이상주의적이고 원칙적인 INFJ는 깊은 통찰력으로 사람들의 마음을 읽습니다. 조용하지만 강한 신념을 가지고 세상을 더 나은 곳으로 만들고자 합니다.",
+        "traits": [
+            "💫 깊은 통찰력과 직관",
+            "❤️ 타인에 대한 공감 능력",
+            "🌍 이상주의적이며 가치 지향적",
+            "✍️ 창의적인 표현력",
+            "🤝 의미 있는 관계 추구"
+        ],
+        "careers": [
+            ("🩺", "상담사/심리치료사"),
+            ("✍️", "작가"),
+            ("🎨", "예술가"),
+            ("👨‍🏫", "교사"),
+            ("🏥", "의료인"),
+            ("🌱", "사회복지사")
+        ],
+        "good_match": ["ENTP", "ENFP"],
+        "challenge_match": ["ESTP", "ISTP"]
     },
     "INFP": {
-        "name": "열정적인 중재자 (Mediator)",
-        "emoji": "🧚",
-        "keywords": ["#이상주의", "#낭만", "#공감", "#예술"],
-        "desc": "상냥하고 이타적이며 낭만적인 성향을 가졌습니다. 자신만의 가치관을 중요시하며 창의적인 활동을 통해 자아를 실현합니다.",
-        "jobs": ["그래픽 디자이너", "작가/시인", "심리학자", "사서", "편집자", "일러스트레이터"]
+        "emoji": "🦋",
+        "nickname": "중재자 (The Mediator)",
+        "group": "diplomat",
+        "color": "#22c55e",
+        "description": "시적인 영혼을 가진 INFP는 자신만의 내면 세계에서 살아갑니다. 진정성과 창의성을 중요시하며, 이상적인 세상을 꿈꿉니다.",
+        "traits": [
+            "🌈 풍부한 상상력과 창의성",
+            "💝 깊은 감정과 공감 능력",
+            "📝 자기표현에 대한 욕구",
+            "🕊️ 평화를 추구하며 갈등 회피",
+            "✨ 진정성과 개성 중시"
+        ],
+        "careers": [
+            ("✍️", "작가/시인"),
+            ("🎨", "그래픽 디자이너"),
+            ("🎵", "음악가"),
+            ("📸", "사진작가"),
+            ("🎭", "배우"),
+            ("🧘", "요가 강사")
+        ],
+        "good_match": ["ENFJ", "ENTJ"],
+        "challenge_match": ["ESTJ", "ISTJ"]
     },
     "ENFJ": {
-        "name": "정의로운 사회운동가 (Protagonist)",
-        "emoji": "🛡️",
-        "keywords": ["#카리스마", "#영향력", "#소통", "#협동"],
-        "desc": "청중을 사로잡고 의욕을 불어넣는 카리스마 넘치는 지도자형입니다. 타인의 잠재력을 이끌어내는 데 탁월합니다.",
-        "jobs": ["홍보 전문가(PR)", "세일즈 매니저", "정치인", "기업 교육 강사", "방송 PD", "아나운서"]
+        "emoji": "🌟",
+        "nickname": "선도자 (The Protagonist)",
+        "group": "diplomat",
+        "color": "#22c55e",
+        "description": "따뜻한 카리스마를 가진 ENFJ는 타인의 성장을 돕는 것에서 기쁨을 느낍니다. 영감을 주는 리더로서 사람들을 하나로 모읍니다.",
+        "traits": [
+            "🤗 뛰어난 대인관계 능력",
+            "🎯 타인의 잠재력을 발견",
+            "💬 설득력 있는 소통 능력",
+            "🌺 이타적이며 헌신적",
+            "🎪 조직력과 리더십"
+        ],
+        "careers": [
+            ("👨‍🏫", "교사/교수"),
+            ("🎤", "코치/멘토"),
+            ("📢", "인사담당자"),
+            ("🏛️", "비영리단체 리더"),
+            ("🎬", "이벤트 플래너"),
+            ("📺", "방송인")
+        ],
+        "good_match": ["INFP", "INTP"],
+        "challenge_match": ["ISTP", "ESTP"]
     },
     "ENFP": {
-        "name": "재기발랄한 활동가 (Campaigner)",
-        "emoji": "🎉",
-        "keywords": ["#열정", "#자유", "#상상력", "#인기"],
-        "desc": "창의적이고 활발하며 웃음이 끊이지 않는 분위기 메이커입니다. 새로운 사람을 만나고 새로운 경험을 하는 것을 사랑합니다.",
-        "jobs": ["엔터테이너", "마케터", "이벤트 기획자", "여행 가이드", "저널리스트", "상품 기획자(MD)"]
+        "emoji": "🎪",
+        "nickname": "활동가 (The Campaigner)",
+        "group": "diplomat",
+        "color": "#22c55e",
+        "description": "열정적이고 창의적인 ENFP는 어디서든 가능성을 발견합니다. 사람들에게 영감을 주고, 새로운 아이디어로 세상을 밝게 만듭니다.",
+        "traits": [
+            "🎉 열정적이고 에너지 넘침",
+            "🌈 창의적이고 상상력이 풍부",
+            "🤝 사교적이며 친화력이 높음",
+            "🎨 다양한 관심사와 재능",
+            "💫 낙관적이며 긍정적"
+        ],
+        "careers": [
+            ("🎨", "크리에이티브 디렉터"),
+            ("📰", "기자/작가"),
+            ("🎭", "배우/연예인"),
+            ("💼", "마케터"),
+            ("🧑‍🏫", "강연가"),
+            ("🎬", "콘텐츠 크리에이터")
+        ],
+        "good_match": ["INTJ", "INFJ"],
+        "challenge_match": ["ISTJ", "ESTJ"]
     },
-    # 관리자형
     "ISTJ": {
-        "name": "청렴결백한 논리주의자 (Logistician)",
         "emoji": "📋",
-        "keywords": ["#책임감", "#현실적", "#전통", "#질서"],
-        "desc": "사실에 근거하여 사고하며 이성적이고 매사에 신중합니다. 한 번 시작한 일은 끝까지 책임지는 성실함이 무기입니다.",
-        "jobs": ["회계사", "공무원", "감사관", "법조인", "데이터베이스 관리자", "약사"]
+        "nickname": "현실주의자 (The Logistician)",
+        "group": "sentinel",
+        "color": "#3b82f6",
+        "description": "신뢰할 수 있고 책임감 있는 ISTJ는 전통과 규칙을 존중합니다. 꼼꼼하고 체계적으로 일을 처리하며, 맡은 일은 반드시 완수합니다.",
+        "traits": [
+            "📌 책임감이 강하고 신뢰할 수 있음",
+            "📊 체계적이고 꼼꼼함",
+            "⚖️ 공정하고 논리적",
+            "🏆 끈기와 인내심",
+            "🔒 전통과 규칙 존중"
+        ],
+        "careers": [
+            ("💰", "회계사"),
+            ("⚖️", "법률가"),
+            ("🏦", "은행원"),
+            ("🔍", "감사관"),
+            ("🏗️", "프로젝트 매니저"),
+            ("👮", "경찰관")
+        ],
+        "good_match": ["ESFP", "ESTP"],
+        "challenge_match": ["ENFP", "INFP"]
     },
     "ISFJ": {
-        "name": "용감한 수호자 (Defender)",
         "emoji": "🛡️",
-        "keywords": ["#헌신", "#인내", "#성실", "#따뜻함"],
-        "desc": "소중한 이들을 지키기 위해 헌신하는 성격입니다. 조용하고 차분하지만, 맡은 바 임무에는 강한 책임감을 보입니다.",
-        "jobs": ["간호사", "초등학교 교사", "사회복지사", "사서", "인사 관리자", "치과 위생사"]
+        "nickname": "수호자 (The Defender)",
+        "group": "sentinel",
+        "color": "#3b82f6",
+        "description": "헌신적이고 따뜻한 ISFJ는 조용히 타인을 돌봅니다. 세심한 배려와 성실함으로 주변 사람들에게 안정감을 줍니다.",
+        "traits": [
+            "🤗 헌신적이고 배려심이 깊음",
+            "📝 세심하고 꼼꼼함",
+            "🏠 가정과 전통 중시",
+            "🤝 협조적이며 팀워크 중시",
+            "💪 책임감과 인내심"
+        ],
+        "careers": [
+            ("👩‍⚕️", "간호사"),
+            ("👨‍🏫", "초등학교 교사"),
+            ("📚", "도서관 사서"),
+            ("🏥", "사회복지사"),
+            ("💼", "행정 담당자"),
+            ("👶", "보육교사")
+        ],
+        "good_match": ["ESFP", "ESTP"],
+        "challenge_match": ["ENTP", "INTP"]
     },
     "ESTJ": {
-        "name": "엄격한 관리자 (Executive)",
-        "emoji": "⚖️",
-        "keywords": ["#규칙", "#지도력", "#조직", "#현실적"],
-        "desc": "사물과 사람을 관리하는 데 뛰어난 능력을 지닌 경영자형입니다. 체계적이고 규칙을 준수하며 효율성을 최우선으로 합니다.",
-        "jobs": ["군 장교", "경찰관", "판사", "재무 이사", "프로젝트 매니저", "은행 지점장"]
+        "emoji": "🎖️",
+        "nickname": "경영자 (The Executive)",
+        "group": "sentinel",
+        "color": "#3b82f6",
+        "description": "질서와 전통을 수호하는 ESTJ는 타고난 조직 관리자입니다. 명확한 규칙 아래서 효율적으로 일하며, 팀을 이끄는 데 능숙합니다.",
+        "traits": [
+            "👔 강한 리더십과 조직력",
+            "📋 체계적이고 효율적",
+            "⚡ 결단력이 있고 실행력이 강함",
+            "🎯 목표 지향적이며 성과 중시",
+            "⚖️ 공정함과 정직함"
+        ],
+        "careers": [
+            ("👔", "경영자/관리자"),
+            ("👮", "군인/경찰"),
+            ("⚖️", "판사"),
+            ("🏦", "은행 지점장"),
+            ("🏭", "공장 관리자"),
+            ("📊", "재무 관리자")
+        ],
+        "good_match": ["ISTP", "ISFP"],
+        "challenge_match": ["INFP", "ENFP"]
     },
     "ESFJ": {
-        "name": "사교적인 외교관 (Consul)",
-        "emoji": "🤝",
-        "keywords": ["#친목", "#봉사", "#조화", "#인기"],
-        "desc": "타인에게 세심한 관심을 쏟으며 사교적인 성격입니다. 사람들과 어울리며 돕는 과정에서 에너지를 얻습니다.",
-        "jobs": ["항공 승무원", "호텔 지배인", "유치원 교사", "홍보 전문가", "의료 코디네이터", "파티 플래너"]
+        "emoji": "💝",
+        "nickname": "집정관 (The Consul)",
+        "group": "sentinel",
+        "color": "#3b82f6",
+        "description": "따뜻하고 사교적인 ESFJ는 타인을 돌보는 것에서 기쁨을 찾습니다. 조화로운 환경을 만들고, 사람들을 하나로 모으는 능력이 있습니다.",
+        "traits": [
+            "🤝 사교적이고 친화력이 높음",
+            "💕 타인에 대한 배려와 관심",
+            "🎊 조화와 협력 중시",
+            "📅 계획적이고 조직적",
+            "🏆 인정받고 싶은 욕구"
+        ],
+        "careers": [
+            ("👩‍⚕️", "의료인"),
+            ("👨‍🏫", "교사"),
+            ("🎪", "이벤트 코디네이터"),
+            ("🏨", "호텔리어"),
+            ("💼", "인사 담당자"),
+            ("🛍️", "판매 전문가")
+        ],
+        "good_match": ["ISTP", "ISFP"],
+        "challenge_match": ["INTP", "ENTP"]
     },
-    # 탐험가형
     "ISTP": {
-        "name": "만능 재주꾼 (Virtuoso)",
         "emoji": "🔧",
-        "keywords": ["#기술", "#도구", "#냉철", "#모험"],
-        "desc": "대담하고 현실적인 성향으로 도구 사용에 능숙합니다. 호기심이 많고 상황 적응력이 뛰어나 문제 해결에 강합니다.",
-        "jobs": ["파일럿", "소프트웨어 엔지니어", "응급구조사", "토목 기사", "정비사", "빅데이터 전문가"]
+        "nickname": "장인 (The Virtuoso)",
+        "group": "explorer",
+        "color": "#f59e0b",
+        "description": "냉철하고 분석적인 ISTP는 손으로 직접 만드는 것을 즐깁니다. 위기 상황에서 침착하게 문제를 해결하는 실용적인 문제 해결사입니다.",
+        "traits": [
+            "🔧 실용적이고 손재주가 좋음",
+            "🧊 침착하고 냉정함",
+            "🔍 분석적인 문제 해결 능력",
+            "🏍️ 모험심과 스릴 추구",
+            "⚡ 효율성과 논리 중시"
+        ],
+        "careers": [
+            ("✈️", "파일럿"),
+            ("🔧", "엔지니어"),
+            ("🏍️", "정비사"),
+            ("🎖️", "군인"),
+            ("🔬", "법의학자"),
+            ("🏃", "운동선수")
+        ],
+        "good_match": ["ESTJ", "ESFJ"],
+        "challenge_match": ["ENFJ", "INFJ"]
     },
     "ISFP": {
-        "name": "호기심 많은 예술가 (Adventurer)",
         "emoji": "🎨",
-        "keywords": ["#예술", "#감성", "#온화", "#현재"],
-        "desc": "항상 새로운 것을 찾아 시도하거나 도전할 준비가 되어 있는 융통성 있는 성격입니다. 따뜻한 감성을 예술로 승화시킵니다.",
-        "jobs": ["패션 디자이너", "보석 세공사", "작곡가", "수의사", "플로리스트", "셰프"]
+        "nickname": "모험가 (The Adventurer)",
+        "group": "explorer",
+        "color": "#f59e0b",
+        "description": "조용하고 감성적인 ISFP는 아름다움을 추구하는 예술가입니다. 현재를 즐기며, 자신만의 방식으로 세상을 표현합니다.",
+        "traits": [
+            "🎨 예술적 감각과 심미안",
+            "🌸 온화하고 친절함",
+            "🦋 자유로운 영혼",
+            "💫 현재를 즐기는 삶",
+            "🤫 조용하지만 열정적"
+        ],
+        "careers": [
+            ("🎨", "화가/일러스트레이터"),
+            ("📸", "사진작가"),
+            ("👨‍🍳", "셰프"),
+            ("🌿", "플로리스트"),
+            ("💅", "뷰티 아티스트"),
+            ("🐕", "수의사")
+        ],
+        "good_match": ["ESTJ", "ESFJ"],
+        "challenge_match": ["ENTJ", "INTJ"]
     },
     "ESTP": {
-        "name": "모험을 즐기는 사업가 (Entrepreneur)",
-        "emoji": "🚀",
-        "keywords": ["#스릴", "#에너지", "#직관", "#행동"],
-        "desc": "위험을 기꺼이 감수하는 성격으로 영리하고 에너지가 넘칩니다. 순간의 포착 능력이 뛰어나며 문제를 즉각적으로 해결합니다.",
-        "jobs": ["주식 중개인", "스포츠 에이전트", "소방관", "여행 가이드", "영업 전문가", "건축가"]
+        "emoji": "🎯",
+        "nickname": "사업가 (The Entrepreneur)",
+        "group": "explorer",
+        "color": "#f59e0b",
+        "description": "에너지 넘치고 행동 지향적인 ESTP는 순간을 살아갑니다. 빠른 판단력과 적응력으로 어떤 상황에서도 기회를 포착합니다.",
+        "traits": [
+            "⚡ 에너지 넘치고 활동적",
+            "🎲 모험심과 위험 감수",
+            "🗣️ 사교적이며 설득력 있음",
+            "🎯 실용적인 문제 해결",
+            "🏃 즉흥적이고 유연함"
+        ],
+        "careers": [
+            ("💼", "사업가"),
+            ("🎤", "영업 전문가"),
+            ("🚔", "경찰관"),
+            ("🏋️", "피트니스 트레이너"),
+            ("🎰", "주식 트레이더"),
+            ("🎬", "스턴트맨")
+        ],
+        "good_match": ["ISTJ", "ISFJ"],
+        "challenge_match": ["INFJ", "ENFJ"]
     },
     "ESFP": {
-        "name": "자유로운 영혼의 연예인 (Entertainer)",
-        "emoji": "💃",
-        "keywords": ["#스타", "#긍정", "#즉흥", "#유머"],
-        "desc": "주위에 있으면 인생이 지루할 새가 없을 정도로 즉흥적이고 열정이 넘칩니다. 사람들을 즐겁게 하는 타고난 엔터테이너입니다.",
-        "jobs": ["배우/가수", "패션 머천다이저", "인테리어 디자이너", "놀이 치료사", "여행 코디네이터", "파티 플래너"]
+        "emoji": "🎉",
+        "nickname": "연예인 (The Entertainer)",
+        "group": "explorer",
+        "color": "#f59e0b",
+        "description": "밝고 즐거운 에너지의 ESFP는 어디서든 분위기를 띄웁니다. 현재를 즐기고, 사람들과 함께하는 것을 사랑하는 타고난 엔터테이너입니다.",
+        "traits": [
+            "🎊 밝고 긍정적인 에너지",
+            "🎭 뛰어난 엔터테인먼트 능력",
+            "🤗 사교적이고 친화력 최고",
+            "🎪 즉흥적이고 재미 추구",
+            "💃 감각적이고 세련됨"
+        ],
+        "careers": [
+            ("🎤", "가수/배우"),
+            ("✈️", "승무원"),
+            ("👨‍🍳", "셰프"),
+            ("🎪", "이벤트 플래너"),
+            ("🏃", "피트니스 강사"),
+            ("📺", "MC/진행자")
+        ],
+        "good_match": ["ISTJ", "ISFJ"],
+        "challenge_match": ["INTJ", "INFJ"]
     }
 }
 
-# -----------------------------------------------------------------------------
-# 3. 사이드바 구성
-# -----------------------------------------------------------------------------
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/4792/4792929.png", width=100)
-    st.markdown("## 👋 내 MBTI 선택하기")
+# 메인 타이틀
+st.markdown('<h1 class="main-title">✨ MBTI 진로 탐색기 ✨</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">🔮 당신의 성격 유형에 맞는 꿈의 직업을 찾아보세요 🔮</p>', unsafe_allow_html=True)
+
+# 세션 상태 초기화
+if 'selected_mbti' not in st.session_state:
+    st.session_state.selected_mbti = None
+
+# MBTI 선택 UI
+st.markdown("---")
+st.markdown("### 🎯 당신의 MBTI를 선택하세요")
+
+# 그룹별 MBTI 표시
+col1, col2, col3, col4 = st.columns(4)
+
+groups = {
+    "analyst": {"name": "🧠 분석가형", "types": ["INTJ", "INTP", "ENTJ", "ENTP"], "col": col1},
+    "diplomat": {"name": "💚 외교관형", "types": ["INFJ", "INFP", "ENFJ", "ENFP"], "col": col2},
+    "sentinel": {"name": "🛡️ 관리자형", "types": ["ISTJ", "ISFJ", "ESTJ", "ESFJ"], "col": col3},
+    "explorer": {"name": "🎯 탐험가형", "types": ["ISTP", "ISFP", "ESTP", "ESFP"], "col": col4}
+}
+
+for group_key, group_info in groups.items():
+    with group_info["col"]:
+        st.markdown(f"**{group_info['name']}**")
+        for mbti_type in group_info["types"]:
+            data = mbti_data[mbti_type]
+            if st.button(f"{data['emoji']} {mbti_type}", key=mbti_type, use_container_width=True):
+                st.session_state.selected_mbti = mbti_type
+
+# 결과 표시
+if st.session_state.selected_mbti:
+    selected = st.session_state.selected_mbti
+    data = mbti_data[selected]
     
-    # MBTI 선택 박스
-    selected_mbti = st.selectbox(
-        "당신의 MBTI 유형을 선택해주세요!",
-        options=list(mbti_data.keys()),
-        index=0
-    )
+    st.markdown("---")
     
-    st.write("---")
-    st.markdown("### 🌟 진로 탐색 꿀팁")
-    st.info("""
-    MBTI는 절대적인 지표가 아닙니다!
-    자신의 성향을 이해하고,
-    흥미로운 직업을 탐색하는
-    도구로만 활용해보세요. :)
-    """)
-
-# -----------------------------------------------------------------------------
-# 4. 메인 컨텐츠 영역
-# -----------------------------------------------------------------------------
-
-# 타이틀 표시
-st.markdown('<div class="main-title">✨ 나의 MBTI 진로 나침반 ✨</div>', unsafe_allow_html=True)
-
-# 선택된 데이터 가져오기
-data = mbti_data[selected_mbti]
-
-# 메인 레이아웃 (2단 분리: 왼쪽 설명, 오른쪽 키워드)
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.markdown(f'<div class="sub-header">{data["emoji"]} 당신의 유형은?</div>', unsafe_allow_html=True)
-    st.markdown(f"### **{selected_mbti} : {data['name']}**")
+    # 결과 카드
+    st.markdown(f"""
+    <div class="result-card">
+        <div class="result-header">
+            <div class="result-emoji">{data['emoji']}</div>
+            <div class="result-type" style="color: {data['color']}">{selected}</div>
+            <div class="result-nickname">{data['nickname']}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.write(data['desc'])
-    st.markdown('</div>', unsafe_allow_html=True)
+    # 설명
+    st.markdown(f"""
+    <div style="background: rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; margin: 20px auto; max-width: 900px;">
+        <p style="font-size: 1.15rem; line-height: 1.8; color: #e0e0e0; text-align: center;">
+            {data['description']}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 두 개의 컬럼으로 나누기
+    col_left, col_right = st.columns(2)
+    
+    with col_left:
+        # 특성
+        st.markdown(f"""
+        <div class="section-title" style="border-color: {data['color']};">
+            🌟 주요 특성
+        </div>
+        """, unsafe_allow_html=True)
+        
+        traits_html = '<div class="trait-box">'
+        for trait in data['traits']:
+            traits_html += f'<div class="trait-item">{trait}</div>'
+        traits_html += '</div>'
+        st.markdown(traits_html, unsafe_allow_html=True)
+    
+    with col_right:
+        # 추천 직업
+        st.markdown(f"""
+        <div class="section-title" style="border-color: {data['color']};">
+            💼 추천 직업
+        </div>
+        """, unsafe_allow_html=True)
+        
+        careers_html = '<div class="career-grid">'
+        for emoji, career in data['careers']:
+            careers_html += f'''
+            <div class="career-item">
+                <div class="career-emoji">{emoji}</div>
+                <div class="career-name">{career}</div>
+            </div>
+            '''
+        careers_html += '</div>'
+        st.markdown(careers_html, unsafe_allow_html=True)
+    
+    # 궁합
+    st.markdown(f"""
+    <div style="margin-top: 30px;">
+        <div class="section-title" style="border-color: {data['color']};">
+            💕 인간관계 궁합
+        </div>
+        <div class="compatibility-section">
+            <div class="compat-row">
+                <div class="compat-item good-match">
+                    <div style="color: #22c55e; font-weight: 700; margin-bottom: 10px;">✨ 찰떡 궁합</div>
+                    <div style="font-size: 1.3rem; color: white;">{', '.join(data['good_match'])}</div>
+                </div>
+                <div class="compat-item challenge-match">
+                    <div style="color: #ef4444; font-weight: 700; margin-bottom: 10px;">💪 도전적 관계</div>
+                    <div style="font-size: 1.3rem; color: white;">{', '.join(data['challenge_match'])}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 다시 선택 버튼
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_btn = st.columns([1, 1, 1])
+    with col_btn[1]:
+        if st.button("🔄 다른 MBTI 살펴보기", use_container_width=True):
+            st.session_state.selected_mbti = None
+            st.rerun()
 
-with col2:
-    st.markdown('<div class="sub-header">🔑 핵심 키워드</div>', unsafe_allow_html=True)
-    st.markdown('<div class="info-card" style="text-align:center;">', unsafe_allow_html=True)
-    for keyword in data['keywords']:
-        st.markdown(f"**{keyword}**")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 추천 직업 섹션 (전체 너비)
-st.markdown('<div class="
+# 푸터
+st.markdown("""
+<div class="footer">
+    <p>🌈 Made with 💖 for Career Education</p>
+    <p>모든 MBTI 유형은 소중하며, 각자의 강점이 있습니다! ✨</p>
+</div>
+""", unsafe_allow_html=True)
