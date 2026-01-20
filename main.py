@@ -191,7 +191,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 국가별 대표 기업 (시가총액 1위 기업들 - 2024년 기준)
+# 국가별 대표 기업 (시가총액 1위 기업들)
 TOP_COMPANIES = {
     "미국": {
         "flag": "🇺🇸",
@@ -246,22 +246,22 @@ TOP_COMPANIES = {
 def format_market_cap(market_cap):
     """시가총액을 읽기 쉬운 형식으로 변환"""
     if market_cap >= 1e12:
-        return f"${market_cap/1e12:.2f}T"
+        return "${:.2f}T".format(market_cap/1e12)
     elif market_cap >= 1e9:
-        return f"${market_cap/1e9:.2f}B"
+        return "${:.2f}B".format(market_cap/1e9)
     elif market_cap >= 1e6:
-        return f"${market_cap/1e6:.2f}M"
+        return "${:.2f}M".format(market_cap/1e6)
     else:
-        return f"${market_cap:,.0f}"
+        return "${:,.0f}".format(market_cap)
 
 def format_number(num):
     """숫자를 읽기 쉬운 형식으로 변환"""
     if num >= 1e9:
-        return f"{num/1e9:.2f}B"
+        return "{:.2f}B".format(num/1e9)
     elif num >= 1e6:
-        return f"{num/1e6:.2f}M"
+        return "{:.2f}M".format(num/1e6)
     else:
-        return f"{num:,.0f}"
+        return "{:,.0f}".format(num)
 
 @st.cache_data(ttl=3600)
 def get_stock_data(ticker):
@@ -297,6 +297,61 @@ def get_stock_data(ticker):
     except Exception as e:
         return None
 
+def render_country_card(country, data):
+    """국가 카드 HTML 생성"""
+    change_class = "price-up" if data['price_change'] >= 0 else "price-down"
+    change_symbol = "+" if data['price_change'] >= 0 else ""
+    change_arrow = "▲" if data['price_change'] >= 0 else "▼"
+    
+    price_formatted = "{:,.2f}".format(data['price'])
+    change_pct_formatted = "{:.2f}".format(data['price_change_pct'])
+    pe_formatted = "{:.2f}".format(data['pe_ratio']) if data['pe_ratio'] else 'N/A'
+    volume_formatted = format_number(data['volume'])
+    market_cap_formatted = format_market_cap(data['market_cap'])
+    
+    html = """
+    <div class="country-card">
+        <div class="country-header">
+            <span class="country-flag">{flag}</span>
+            <span class="country-name">{country}</span>
+        </div>
+        <div class="company-section">
+            <div class="company-name">{name}</div>
+            <span class="company-ticker">{ticker}</span>
+        </div>
+        <div class="market-cap">{market_cap}</div>
+        <div class="stock-price">
+            <span class="price-value">{currency} {price}</span>
+            <span class="price-change {change_class}">{arrow} {symbol}{change_pct}%</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">P/E 비율</span>
+            <span class="info-value">{pe}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">거래량</span>
+            <span class="info-value">{volume}</span>
+        </div>
+        <span class="sector-badge">{sector}</span>
+    </div>
+    """.format(
+        flag=data['flag'],
+        country=country,
+        name=data['name'],
+        ticker=data['ticker'],
+        market_cap=market_cap_formatted,
+        currency=data['currency'],
+        price=price_formatted,
+        change_class=change_class,
+        arrow=change_arrow,
+        symbol=change_symbol,
+        change_pct=change_pct_formatted,
+        pe=pe_formatted,
+        volume=volume_formatted,
+        sector=data['sector']
+    )
+    return html
+
 # 메인 헤더
 st.markdown("""
 <div class="main-header">
@@ -305,9 +360,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown(f"""
-<p class="update-time">📅 {datetime.now().strftime('%Y년 %m월 %d일 %H:%M')} 기준</p>
-""", unsafe_allow_html=True)
+update_time = datetime.now().strftime('%Y년 %m월 %d일 %H:%M')
+st.markdown('<p class="update-time">📅 {} 기준</p>'.format(update_time), unsafe_allow_html=True)
 
 # 데이터 로딩
 with st.spinner('🔄 전 세계 주식 데이터를 불러오는 중...'):
@@ -326,37 +380,8 @@ if stock_data:
     for i, country in enumerate(row1_countries):
         with cols1[i]:
             if country in stock_data:
-                data = stock_data[country]
-                change_class = "price-up" if data['price_change'] >= 0 else "price-down"
-                change_symbol = "+" if data['price_change'] >= 0 else ""
-                change_arrow = "▲" if data['price_change'] >= 0 else "▼"
-                
-                st.markdown(f"""
-                <div class="country-card">
-                    <div class="country-header">
-                        <span class="country-flag">{data['flag']}</span>
-                        <span class="country-name">{country}</span>
-                    </div>
-                    <div class="company-section">
-                        <div class="company-name">{data['name']}</div>
-                        <span class="company-ticker">{data['ticker']}</span>
-                    </div>
-                    <div class="market-cap">{format_market_cap(data['market_cap'])}</div>
-                    <div class="stock-price">
-                        <span class="price-value">{data['currency']} {data['price']:,.2f}</span>
-                        <span class="price-change {change_class}">{change_arrow} {change_symbol}{data['price_change_pct']:.2f}%</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">P/E 비율</span>
-                        <span class="info-value">{data['pe_ratio']:.2f if data['pe_ratio'] else 'N/A'}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">거래량</span>
-                        <span class="info-value">{format_number(data['volume'])}</span>
-                    </div>
-                    <span class="sector-badge">{data['sector']}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                html = render_country_card(country, stock_data[country])
+                st.markdown(html, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -367,37 +392,8 @@ if stock_data:
     for i, country in enumerate(row2_countries):
         with cols2[i]:
             if country in stock_data:
-                data = stock_data[country]
-                change_class = "price-up" if data['price_change'] >= 0 else "price-down"
-                change_symbol = "+" if data['price_change'] >= 0 else ""
-                change_arrow = "▲" if data['price_change'] >= 0 else "▼"
-                
-                st.markdown(f"""
-                <div class="country-card">
-                    <div class="country-header">
-                        <span class="country-flag">{data['flag']}</span>
-                        <span class="country-name">{country}</span>
-                    </div>
-                    <div class="company-section">
-                        <div class="company-name">{data['name']}</div>
-                        <span class="company-ticker">{data['ticker']}</span>
-                    </div>
-                    <div class="market-cap">{format_market_cap(data['market_cap'])}</div>
-                    <div class="stock-price">
-                        <span class="price-value">{data['currency']} {data['price']:,.2f}</span>
-                        <span class="price-change {change_class}">{change_arrow} {change_symbol}{data['price_change_pct']:.2f}%</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">P/E 비율</span>
-                        <span class="info-value">{data['pe_ratio']:.2f if data['pe_ratio'] else 'N/A'}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">거래량</span>
-                        <span class="info-value">{format_number(data['volume'])}</span>
-                    </div>
-                    <span class="sector-badge">{data['sector']}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                html = render_country_card(country, stock_data[country])
+                st.markdown(html, unsafe_allow_html=True)
     
     # 요약 테이블
     st.markdown("<br>", unsafe_allow_html=True)
@@ -410,13 +406,14 @@ if stock_data:
     # 데이터프레임 생성
     summary_data = []
     for country, data in stock_data.items():
+        change_symbol = "+" if data['price_change_pct'] >= 0 else ""
         summary_data.append({
-            "국가": f"{data['flag']} {country}",
+            "국가": "{} {}".format(data['flag'], country),
             "기업명": data['name'],
             "티커": data['ticker'],
             "시가총액 (USD)": data['market_cap'],
             "시가총액": format_market_cap(data['market_cap']),
-            "주가 변동": f"{'+' if data['price_change_pct'] >= 0 else ''}{data['price_change_pct']:.2f}%",
+            "주가 변동": "{}{}%".format(change_symbol, round(data['price_change_pct'], 2)),
             "섹터": data['sector']
         })
     
