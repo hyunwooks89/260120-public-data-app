@@ -2,6 +2,9 @@ import streamlit as st
 import yfinance as yf
 from datetime import datetime
 import pandas as pd
+import feedparser
+import requests
+from xml.etree import ElementTree as ET
 
 # 페이지 설정
 st.set_page_config(
@@ -10,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS 스타일링 - 중괄호 이스케이프 처리
+# CSS 스타일링
 css_style = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap');
@@ -94,6 +97,13 @@ css_style = """
         color: #f1f5f9;
         margin-bottom: 10px;
         line-height: 1.5;
+    }
+    
+    .news-summary {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        line-height: 1.7;
+        margin-bottom: 12px;
     }
     
     .news-meta {
@@ -209,33 +219,57 @@ def get_index_data(ticker):
     except:
         return None
 
-@st.cache_data(ttl=600)
-def get_stock_news(ticker):
-    """주식 관련 뉴스 가져오기"""
+@st.cache_data(ttl=300)
+def get_mk_news():
+    """매일경제 RSS에서 뉴스 가져오기"""
     try:
-        stock = yf.Ticker(ticker)
-        news = stock.news
-        return news[:10] if news else []
-    except:
+        rss_url = "https://www.mk.co.kr/rss/50200011/"
+        feed = feedparser.parse(rss_url)
+        
+        news_list = []
+        for entry in feed.entries[:15]:
+            # pubDate 파싱
+            pub_date = entry.get('published', '')
+            
+            news_item = {
+                'title': entry.get('title', '제목 없음'),
+                'link': entry.get('link', '#'),
+                'summary': entry.get('summary', entry.get('description', '')),
+                'published': pub_date,
+                'source': '매일경제'
+            }
+            news_list.append(news_item)
+        
+        return news_list
+    except Exception as e:
+        st.error("뉴스를 불러오는 중 오류가 발생했습니다: " + str(e))
         return []
 
-def format_time_ago(timestamp):
-    """타임스탬프를 '~전' 형식으로 변환"""
+def format_pub_date(pub_date_str):
+    """발행일을 한국어 형식으로 변환"""
     try:
-        news_time = datetime.fromtimestamp(timestamp)
-        now = datetime.now()
-        diff = now - news_time
-        
-        if diff.days > 0:
-            return str(diff.days) + "일 전"
-        elif diff.seconds >= 3600:
-            return str(diff.seconds // 3600) + "시간 전"
-        elif diff.seconds >= 60:
-            return str(diff.seconds // 60) + "분 전"
-        else:
-            return "방금 전"
+        # RSS 날짜 형식 파싱 시도
+        from email.utils import parsedate_to_datetime
+        dt = parsedate_to_datetime(pub_date_str)
+        return dt.strftime('%m월 %d일 %H:%M')
     except:
-        return ""
+        try:
+            # 다른 형식 시도
+            dt = datetime.strptime(pub_date_str[:19], '%Y-%m-%dT%H:%M:%S')
+            return dt.strftime('%m월 %d일 %H:%M')
+        except:
+            return pub_date_str[:16] if pub_date_str else ""
+
+def clean_html(text):
+    """HTML 태그 제거"""
+    import re
+    clean = re.sub('<[^<]+?>', '', text)
+    clean = clean.replace('&nbsp;', ' ')
+    clean = clean.replace('&quot;', '"')
+    clean = clean.replace('&amp;', '&')
+    clean = clean.replace('&lt;', '<')
+    clean = clean.replace('&gt;', '>')
+    return clean.strip()
 
 def render_market_card(name, data):
     """마켓 카드 HTML 생성"""
@@ -258,14 +292,25 @@ def render_market_card(name, data):
     '''
     return html
 
-def render_news_card(title, publisher, time_ago, link):
+def render_news_card(title, summary, pub_date, link, source):
     """뉴스 카드 HTML 생성"""
+    # HTML 태그 제거
+    clean_title = clean_html(title)
+    clean_summary = clean_html(summary)
+    
+    # 요약 길이 제한
+    if len(clean_summary) > 150:
+        clean_summary = clean_summary[:150] + "..."
+    
+    formatted_date = format_pub_date(pub_date)
+    
     html = '''
     <div class="news-card">
-        <span class="news-source">''' + publisher + '''</span>
-        <div class="news-title">''' + title + '''</div>
+        <span class="news-source">''' + source + '''</span>
+        <div class="news-title">''' + clean_title + '''</div>
+        <div class="news-summary">''' + clean_summary + '''</div>
         <div class="news-meta">
-            <span class="news-time">🕐 ''' + time_ago + '''</span>
+            <span class="news-time">🕐 ''' + formatted_date + '''</span>
             <a href="''' + link + '''" target="_blank" class="news-link">자세히 보기 →</a>
         </div>
     </div>
@@ -339,38 +384,22 @@ with news_col1:
     </div>
     ''', unsafe_allow_html=True)
     
-    # 여러 소스에서 뉴스 수집
-    all_news = []
-    news_tickers = ["^GSPC", "AAPL", "MSFT", "GOOGL", "NVDA", "TSLA"]
-    
+    # 매일경제 RSS에서 뉴스 가져오기
     with st.spinner("최신 뉴스를 불러오는 중..."):
-        for ticker in news_tickers:
-            news_items = get_stock_news(ticker)
-            for item in news_items:
-                if item not in all_news:
-                    all_news.append(item)
+        news_list = get_mk_news()
     
-    # 중복 제거 및 시간순 정렬
-    seen_titles = set()
-    unique_news = []
-    for item in all_news:
-        title = item.get('title', '')
-        if title not in seen_titles:
-            seen_titles.add(title)
-            unique_news.append(item)
-    
-    unique_news.sort(key=lambda x: x.get('providerPublishTime', 0), reverse=True)
-    
-    # 뉴스 카드 표시
-    for item in unique_news[:8]:
-        title = item.get('title', '제목 없음')
-        publisher = item.get('publisher', 'Unknown')
-        link = item.get('link', '#')
-        publish_time = item.get('providerPublishTime', 0)
-        time_ago = format_time_ago(publish_time)
-        
-        html = render_news_card(title, publisher, time_ago, link)
-        st.markdown(html, unsafe_allow_html=True)
+    if news_list:
+        for news in news_list[:10]:
+            html = render_news_card(
+                news['title'],
+                news['summary'],
+                news['published'],
+                news['link'],
+                news['source']
+            )
+            st.markdown(html, unsafe_allow_html=True)
+    else:
+        st.warning("뉴스를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.")
 
 with news_col2:
     st.markdown('''
@@ -424,7 +453,7 @@ with news_col2:
 update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 footer_html = '''
 <div class="footer">
-    <p>📊 데이터 제공: Yahoo Finance</p>
+    <p>📊 지수 데이터: Yahoo Finance | 📰 뉴스 제공: 매일경제</p>
     <p>마지막 업데이트: ''' + update_time + '''</p>
     <p style="margin-top: 15px; font-size: 0.75rem;">
         ⚠️ 본 서비스는 투자 권유가 아니며, 투자의 책임은 본인에게 있습니다.
